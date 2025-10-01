@@ -95,6 +95,40 @@ class TicketController {
             return sendError(res, error.message);
         }
     }
+
+    static async getAllTickets(req: Request, res: Response) {
+        try {
+            const { status, priority, assignedToUser, reportedBy, assignedToTeam, assignedToGroup } = req.query;
+            if (!status && !priority && !assignedToUser && !reportedBy && !assignedToTeam && !assignedToGroup) {
+                return sendError(res, 'At least one query parameter is required for filtering', [], 400);
+            }
+            const filters: Record<string, any> = {};
+            if (status) filters.status = status;
+            if (priority) filters.priority = priority;
+            if (assignedToUser) filters.assignedToUser = assignedToUser;
+            if (reportedBy) filters.reportedBy = reportedBy;
+            if (assignedToTeam) filters.assignedToTeam = assignedToTeam;
+            if (assignedToGroup) filters.assignedToGroup = assignedToGroup;
+            const tickets = await TicketService.getAllTickets(filters);
+            return sendSuccess(res, 'Tickets fetched successfully', { tickets });
+        } catch (error: any) {
+            return sendError(res, error.message);
+        }
+    }
+
+    static async getTicketHistory(req: Request, res: Response) {
+        try {
+            const { ticketId } = req.params;
+            if (!ticketId) {
+                return sendError(res, 'TicketId is required', [], 400);
+            }
+            const ticketHistory = await TicketService.getTicketHistory(ticketId);
+            return sendSuccess(res, 'Ticket data fetched', { ticketHistory: ticketHistory });
+        } catch (error: any) {
+            return sendError(res, error.message);
+        }
+    }
+
 }
 
 export default TicketController;

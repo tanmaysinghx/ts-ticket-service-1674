@@ -163,6 +163,19 @@ class TicketService {
         }
         return ticket;
     }
+
+    static async getAllTickets(filters: Record<string, any>) {
+        const tickets = await TicketSchema.find(filters).exec();
+        return tickets;
+    }
+
+    static async getTicketHistory(ticketId: string) {
+        const ticket = await TicketSchema.findOne({ ticketId });
+        if (!ticket) {
+            throw new Error('Ticket not found');
+        }
+        return ticket.history;
+    }
 }
 
 export default TicketService;

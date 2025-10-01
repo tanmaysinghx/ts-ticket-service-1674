@@ -16,6 +16,8 @@ router.post('/modify-ticket/:ticketId', TicketController.modifyTicket);
 
 router.get("/get-ticket/:ticketId", TicketController.getTicket);
 
+router.get("/get-all-tickets", TicketController.getAllTickets);
 
+router.get("/get-ticket-history/:ticketId", TicketController.getTicketHistory);
 
 export default router;
