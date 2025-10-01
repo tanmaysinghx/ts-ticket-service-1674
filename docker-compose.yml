@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: ts-ticket-service-1674
+    ports:
+      - "1674:1674"
+    environment:
+      - NODE_ENV=development
+      - PORT=1674
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
