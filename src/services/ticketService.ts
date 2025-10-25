@@ -7,6 +7,9 @@ interface ITicketData {
     status?: string;
     priority?: string;
     assignedTo?: string | null;
+    assignedToGroup?: string;
+    assignedToTeam?: string;
+    assignedToUser?: string;
     reportedBy: string;
     tags?: string[];
     attachments?: string[];
@@ -100,39 +103,71 @@ class TicketService {
             throw new Error('Ticket not found');
         }
         const allowedKeys: Array<keyof ITicketData> = [
-            "email", "title", "description", "status", "priority", "assignedTo", "reportedBy", "tags", "attachments", "dueDate", "comments", "createdByIp", "lastUpdatedBy", "ticketId"
+            "email",
+            "title",
+            "description",
+            "status",
+            "priority",
+            "assignedToGroup",
+            "assignedToTeam",
+            "assignedToUser",
+            "reportedBy",
+            "tags",
+            "attachments",
+            "dueDate",
+            "comments",
+            "lastUpdatedBy",
+            "ticketId"
         ];
+        let isModified = false;
+        const changedFields: string[] = [];
+
         for (const key of Object.keys(changes)) {
-            if (key === 'changedBy') continue;
-            if (!allowedKeys.includes(key as keyof ITicketData)) continue;
+            if (key === 'changedBy' || !allowedKeys.includes(key as keyof ITicketData)) continue;
             const oldValue = (ticket as any)[key];
             const newValue = changes[key];
-            if (newValue !== undefined && newValue !== oldValue) {
-                if (key === 'comments' && Array.isArray(newValue)) {
-                    for (const comment of newValue) {
+            if (JSON.stringify(oldValue) === JSON.stringify(newValue)) continue;
+            if (key === 'comments' && Array.isArray(newValue)) {
+                const oldLength = (ticket.comments || []).length;
+                const newComments = newValue.slice(oldLength);
+                if (newComments.length > 0) {
+                    for (const comment of newComments) {
                         ticket.comments.push(comment);
                     }
                     ticket.history.push({
                         action: 'UPDATED_COMMENTS',
-                        fromValue: `${(oldValue as any[]).length} comments`,
+                        fromValue: `${oldLength} comments`,
                         toValue: `${ticket.comments.length} comments`,
                         changedBy,
                         timestamp: new Date()
                     });
-                } else {
-                    (ticket as any)[key] = newValue;
-                    ticket.history.push({
-                        action: `UPDATED_${key.toUpperCase()}`,
-                        fromValue: oldValue != null ? oldValue.toString() : null,
-                        toValue: newValue != null ? newValue.toString() : null,
-                        changedBy,
-                        timestamp: new Date()
-                    });
+                    isModified = true;
+                    changedFields.push('comments');
                 }
+            } else {
+                (ticket as any)[key] = newValue;
+                ticket.history.push({
+                    action: `UPDATED_${key.toUpperCase()}`,
+                    fromValue: oldValue != null ? oldValue.toString() : null,
+                    toValue: newValue != null ? newValue.toString() : null,
+                    changedBy,
+                    timestamp: new Date()
+                });
+                isModified = true;
+                changedFields.push(key);
             }
-            await ticket.save();
-            return ticket;
         }
+        if (isModified) {
+            ticket.lastUpdatedBy = changedBy;
+            ticket.updatedAt = new Date();
+            await ticket.save();
+        }
+        return {
+            success: true,
+            message: isModified ? "Ticket updated successfully" : "No changes detected",
+            changedFields,
+            data: ticket
+        };
     }
 
     static async addComment(ticketId: string, commentData: IComment) {
