@@ -99,9 +99,6 @@ class TicketController {
     static async getAllTickets(req: Request, res: Response) {
         try {
             const { status, priority, assignedToUser, reportedBy, assignedToTeam, assignedToGroup } = req.query;
-            if (!status && !priority && !assignedToUser && !reportedBy && !assignedToTeam && !assignedToGroup) {
-                return sendError(res, 'At least one query parameter is required for filtering', [], 400);
-            }
             const filters: Record<string, any> = {};
             if (status) filters.status = status;
             if (priority) filters.priority = priority;
